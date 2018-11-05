@@ -1,5 +1,5 @@
-import { Either, Left, Right } from 'fp-ts/lib/Either'
-import { Predicate } from 'fp-ts/lib/function'
+import { Either, Left, Right } from '../../fp-ts/src/Either'
+import { Predicate } from '../../fp-ts/src/function'
 
 declare global {
   interface Array<T> {
