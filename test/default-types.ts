@@ -4,43 +4,114 @@ import { assertSuccess, assertFailure } from './helpers'
 
 describe('Dictionary', () => {
   it('should succeed validating a valid value', () => {
-    const T1 = t.Dictionary
-    assertSuccess(t.Dictionary.decode({}))
-    assertSuccess(T1.decode([]))
-    assertSuccess(T1.decode([1]))
-    assertSuccess(T1.decode(new Number()))
-    assertSuccess(T1.decode(new Date()))
+    const T = t.UnknownRecord
+    assertSuccess(T.decode({}))
+    assertSuccess(T.decode([]))
+    assertSuccess(T.decode([1]))
+    assertSuccess(T.decode(new Number()))
+    assertSuccess(T.decode(new Date()))
   })
 
   it('should fail validating an invalid value', () => {
-    const T = t.Dictionary
-    assertFailure(T.decode('s'), ['Invalid value "s" supplied to : Dictionary'])
-    assertFailure(T.decode(1), ['Invalid value 1 supplied to : Dictionary'])
-    assertFailure(T.decode(true), ['Invalid value true supplied to : Dictionary'])
-    assertFailure(T.decode(null), ['Invalid value null supplied to : Dictionary'])
-    assertFailure(T.decode(undefined), ['Invalid value undefined supplied to : Dictionary'])
+    const T = t.UnknownRecord
+    assertFailure(T, 's', ['Invalid value "s" supplied to : UnknownRecord'])
+    assertFailure(T, 1, ['Invalid value 1 supplied to : UnknownRecord'])
+    assertFailure(T, true, ['Invalid value true supplied to : UnknownRecord'])
+    assertFailure(T, null, ['Invalid value null supplied to : UnknownRecord'])
+    assertFailure(T, undefined, ['Invalid value undefined supplied to : UnknownRecord'])
+  })
+})
+
+describe('UnknownArray', () => {
+  it('should succeed decoding a valid value', () => {
+    const T = t.UnknownArray
+    assertSuccess(T.decode([]))
+    assertSuccess(T.decode([1]))
+  })
+
+  it('should fail decoding an invalid value', () => {
+    const T = t.UnknownArray
+    assertFailure(T, 's', ['Invalid value "s" supplied to : UnknownArray'])
+    assertFailure(T, 1, ['Invalid value 1 supplied to : UnknownArray'])
+    assertFailure(T, true, ['Invalid value true supplied to : UnknownArray'])
+    assertFailure(T, null, ['Invalid value null supplied to : UnknownArray'])
+    assertFailure(T, undefined, ['Invalid value undefined supplied to : UnknownArray'])
+  })
+})
+
+describe('null', () => {
+  it('should succeed decoding a valid value', () => {
+    assertSuccess(t.null.decode(null))
+  })
+  it('should fail decoding an invalid value', () => {
+    const T = t.null
+    assertFailure(T, 1, ['Invalid value 1 supplied to : null'])
+  })
+})
+
+describe('undefined', () => {
+  it('should succeed decoding a valid value', () => {
+    assertSuccess(t.undefined.decode(undefined))
+  })
+  it('should fail decoding an invalid value', () => {
+    const T = t.undefined
+    assertFailure(T, 1, ['Invalid value 1 supplied to : undefined'])
+  })
+})
+
+describe('unknown', () => {
+  it('should decode any value', () => {
+    assertSuccess(t.unknown.decode(null))
+    assertSuccess(t.unknown.decode(undefined))
+    assertSuccess(t.unknown.decode('foo'))
+    assertSuccess(t.unknown.decode(1))
+    assertSuccess(t.unknown.decode(true))
+    assertSuccess(t.unknown.decode({}))
+    assertSuccess(t.unknown.decode([]))
+    assertSuccess(t.unknown.decode(/a/))
+  })
+
+  it('should accept any value', () => {
+    assert.ok(t.unknown.is(null))
+    assert.ok(t.unknown.is(undefined))
+    assert.ok(t.unknown.is('foo'))
+    assert.ok(t.unknown.is(1))
+    assert.ok(t.unknown.is(true))
+    assert.ok(t.unknown.is({}))
+    assert.ok(t.unknown.is([]))
+    assert.ok(t.unknown.is(/a/))
+  })
+})
+
+describe('boolean', () => {
+  it('should decode boolean values', () => {
+    const T = t.boolean
+    assertSuccess(T.decode(true))
+    assertSuccess(T.decode(false))
+  })
+
+  it('should not decode non-boolean values', () => {
+    const T = t.boolean
+    assertFailure(T, 1, ['Invalid value 1 supplied to : boolean'])
   })
 })
 
 describe('Integer', () => {
   it('should validate integers', () => {
-    assertSuccess(t.Integer.decode(1))
-    assertFailure(t.Integer.decode(0.5), ['Invalid value 0.5 supplied to : Integer'])
-    assertFailure(t.Integer.decode('foo'), ['Invalid value "foo" supplied to : Integer'])
-  })
-})
-
-describe('null', () => {
-  it('should support the alias `nullType`', () => {
-    assertSuccess(t.nullType.decode(null))
-    assertFailure(t.nullType.decode(1), ['Invalid value 1 supplied to : null'])
+    const T = t.Integer
+    assertSuccess(T.decode(1))
+    assertFailure(T, 0.5, ['Invalid value 0.5 supplied to : Integer'])
+    assertFailure(T, 'foo', ['Invalid value "foo" supplied to : Integer'])
+    assertFailure(T, Infinity, ['Invalid value Infinity supplied to : Integer'])
+    assertFailure(T, -Infinity, ['Invalid value -Infinity supplied to : Integer'])
   })
 })
 
 describe('void', () => {
   it('should support the alias `voidType`', () => {
+    const T = t.void
     assertSuccess(t.voidType.decode(undefined))
-    assertFailure(t.voidType.decode(1), ['Invalid value 1 supplied to : void'])
+    assertFailure(T, 1, ['Invalid value 1 supplied to : void'])
   })
 })
 
@@ -55,15 +126,15 @@ describe('object', () => {
 
   it('should fail with primitives', () => {
     const T = t.object
-    assertFailure(T.decode('s'), ['Invalid value "s" supplied to : object'])
-    assertFailure(T.decode(1), ['Invalid value 1 supplied to : object'])
-    assertFailure(T.decode(true), ['Invalid value true supplied to : object'])
+    assertFailure(T, 's', ['Invalid value "s" supplied to : object'])
+    assertFailure(T, 1, ['Invalid value 1 supplied to : object'])
+    assertFailure(T, true, ['Invalid value true supplied to : object'])
   })
 
   it('should fail with null and undefined', () => {
     const T = t.object
-    assertFailure(T.decode(null), ['Invalid value null supplied to : object'])
-    assertFailure(T.decode(undefined), ['Invalid value undefined supplied to : object'])
+    assertFailure(T, null, ['Invalid value null supplied to : object'])
+    assertFailure(T, undefined, ['Invalid value undefined supplied to : object'])
   })
 })
 
@@ -73,7 +144,8 @@ describe('Function', () => {
   })
 
   it('should not decode non-functions', () => {
-    assertFailure(t.Function.decode(1), ['Invalid value 1 supplied to : Function'])
+    const T = t.Function
+    assertFailure(T, 1, ['Invalid value 1 supplied to : Function'])
   })
 })
 
@@ -105,15 +177,16 @@ describe('any', () => {
 
 describe('never', () => {
   it('should not decode any value', () => {
-    assertFailure(t.never.decode(null), ['Invalid value null supplied to : never'])
-    assertFailure(t.never.decode(undefined), ['Invalid value undefined supplied to : never'])
-    assertFailure(t.never.decode('foo'), ['Invalid value "foo" supplied to : never'])
-    assertFailure(t.never.decode(1), ['Invalid value 1 supplied to : never'])
-    assertFailure(t.never.decode(true), ['Invalid value true supplied to : never'])
-    assertFailure(t.never.decode(t.identity), ['Invalid value <function1> supplied to : never'])
-    assertFailure(t.never.decode({}), ['Invalid value {} supplied to : never'])
-    assertFailure(t.never.decode([]), ['Invalid value [] supplied to : never'])
-    assertFailure(t.never.decode(/a/), ['Invalid value {} supplied to : never'])
+    const T = (t.never as any) as t.Any
+    assertFailure(T, null, ['Invalid value null supplied to : never'])
+    assertFailure(T, undefined, ['Invalid value undefined supplied to : never'])
+    assertFailure(T, 'foo', ['Invalid value "foo" supplied to : never'])
+    assertFailure(T, 1, ['Invalid value 1 supplied to : never'])
+    assertFailure(T, true, ['Invalid value true supplied to : never'])
+    assertFailure(T, t.identity, ['Invalid value <function1> supplied to : never'])
+    assertFailure(T, {}, ['Invalid value {} supplied to : never'])
+    assertFailure(T, [], ['Invalid value [] supplied to : never'])
+    assertFailure(T, /a/, ['Invalid value {} supplied to : never'])
   })
 
   it('should not accept any value', () => {
@@ -126,16 +199,5 @@ describe('never', () => {
     assert.ok(!t.never.is({}))
     assert.ok(!t.never.is([]))
     assert.ok(!t.never.is(/a/))
-  })
-})
-
-describe('boolean', () => {
-  it('should decode boolean values', () => {
-    assertSuccess(t.boolean.decode(true))
-    assertSuccess(t.boolean.decode(false))
-  })
-
-  it('should not decode non-boolean values', () => {
-    assertFailure(t.boolean.decode(1), ['Invalid value 1 supplied to : boolean'])
   })
 })

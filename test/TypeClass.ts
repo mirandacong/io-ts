@@ -1,6 +1,7 @@
 import * as assert from 'assert'
 import * as t from '../src/index'
 import { assertSuccess, assertFailure } from './helpers'
+import { right, Either } from 'fp-ts/lib/Either'
 
 const BAA = new t.Type<number, string, string>(
   'BAA',
@@ -18,6 +19,28 @@ const BAI = t.string.pipe(
 )
 
 describe('Type', () => {
+  it('should auto bind decode', () => {
+    function clone<C extends t.Any>(t: C): C {
+      const r = Object.create(Object.getPrototypeOf(t))
+      ;(Object as any).assign(r, t)
+      return r
+    }
+
+    const T = t.string
+    const decode = <L, A>(f: (u: unknown) => Either<L, A>, u: unknown): boolean => f(u).isRight()
+    assert.strictEqual(decode(T.decode, 'a'), true)
+    assert.strictEqual(decode(clone(T).decode, 'a'), true)
+    type A = {
+      a: A | null
+    }
+    const A: t.Type<A> = t.recursion('A', () =>
+      t.type({
+        a: t.union([A, t.null])
+      })
+    )
+    assert.strictEqual(decode(clone(A).decode, { a: { a: null } }), true)
+  })
+
   describe('pipe', () => {
     it('should assign a default name', () => {
       const AOI = t.string
@@ -27,13 +50,25 @@ describe('Type', () => {
 
     it('should combine two types', () => {
       assertSuccess(BAI.decode('1'))
-      assertFailure(BAI.decode(1), ['Invalid value 1 supplied to : T'])
-      assertFailure(BAI.decode('a'), ['Invalid value "a" supplied to : T'])
+      assertFailure(BAI, 1, ['Invalid value 1 supplied to : T'])
+      assertFailure(BAI, 'a', ['Invalid value "a" supplied to : T'])
       assert.strictEqual(BAI.encode(2), '2')
     })
 
     it('should ude identity as decoder function', () => {
       assert.strictEqual(t.string.pipe(t.string as t.Type<string, string, string>).encode, t.identity)
+    })
+
+    it('accept to pipe a type with a wider input', () => {
+      const T = t.string.pipe(t.string)
+      assert.deepStrictEqual(T.decode('a'), right('a'))
+      assert.strictEqual(T.encode('a'), 'a')
+    })
+
+    it('accept to pipe a type with a narrower output', () => {
+      const T = t.string.pipe(t.literal('foo'))
+      assert.deepStrictEqual(T.decode('foo'), right('foo'))
+      assert.strictEqual(T.encode('foo'), 'foo')
     })
   })
 
@@ -52,7 +87,10 @@ describe('Type', () => {
 
 describe('getContextEntry', () => {
   it('should return a ContextEntry', () => {
-    assert.deepEqual(t.getContextEntry('key', t.string), { key: 'key', type: t.string })
+    assert.deepStrictEqual(t.getContextEntry('key', t.string), {
+      key: 'key',
+      type: t.string
+    })
   })
 })
 
